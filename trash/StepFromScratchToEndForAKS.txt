@@ -1,0 +1,18 @@
+Development:
+
+Step 1: Open Visual Studio-> Create a new Project-> ASP.Net Core Web Application ->Project Name and Solution Name: PaasCoeProject->MVC(Enable Docker Support for linux)->Run(IISServer)
+
+Step 2: Go to Model and Add a class-> Name: Employee-> Now add 2 properties in the Employee.cs "
+                                                                                   public int Id { get; set; }
+
+                                                                                   public string Name { get; set; }
+
+Step 3: Now we have to add Controller in the Controller Section: Use MVC Controller with Views, Using Entity Framework. -> Add 
+        Model Class: Employee (PaasCoeProject.Models)
+        Data Context Class: PaasCoeProject.Models.EmployeesContext
+
+
+
+az aks get-credentials --resource-group AKS --name AKS
+
+52.237.129.89:31420

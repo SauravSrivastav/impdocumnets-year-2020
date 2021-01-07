@@ -1,0 +1,17 @@
+1) SqlException: Cannot open database "EmployeesContext-e7924ee2-d7da-43a0-a9b6-7a61f5f914b3" requested by the login. The login failed.
+Login failed for user 'HCLTECH\saurav.srivastava'.
+System.Data.SqlClient.SqlInternalConnectionTds..ctor(DbConnectionPoolIdentity identity, SqlConnectionString connectionOptions, SqlCredential credential, object providerInfo, string newPassword, SecureString newSecurePassword, bool redirectedUserInstance, SqlConnectionString userConnectionOptions, SessionData reconnectSessionData, bool applyTransientFaultHandling, string accessToken)
+
+In Data add : "Database.EnsureCreated();"
+
+
+
+$ git add .
+error: open(".vs/AzurePassCoeProject/v16/Server/sqlite3/db.lock"): Permission denied
+error: unable to index file '.vs/AzurePassCoeProject/v16/Server/sqlite3/db.lock'
+fatal: adding files failed
+
+
+To resolve this issue is simple. First Close, the Visual Studio and open the Windows Explorer, Go to location folder .vs and open folder properties and check the option hidden
+
+git remote rm origin

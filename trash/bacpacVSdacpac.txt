@@ -1,0 +1,21 @@
+It is simple to export a SQL Server database which may be required to import to another server or even for longer term retention. There are two primary types of export file, bacpac and dacpac. A bacpac includes the schema and data from the database. A dacpac containers only the schema and not the data.
+
+A bacpac includes the schema and data from the database. A dacpac containers only the schema and not the data. Note that the schema really comprises of everything NOT data, for example the actual table definitions of the database, views, stored procedures, functions etc.
+
+
+***********************************************************************************************************************************************************************
+                                                                             DACPAC
+***********************************************************************************************************************************************************************
+
+Data-Tier Application Package contains the database schema in .xml format.
+
+Database life-cycle management tool to simplfy development, deployment and managemanet of data tier elememts supporting and application.
+
+
+***********************************************************************************************************************************************************************
+                                                                              BACPAC 
+***********************************************************************************************************************************************************************
+
+It is a DACPAC with data.
+
+Generally used to moeve a database from one server to another for migrating a database.

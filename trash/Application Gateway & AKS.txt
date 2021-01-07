@@ -1,0 +1,205 @@
+***********************************************************************************************************************************************************************
+
+                                                              Azure CNI network and Application Gateway
+
+***********************************************************************************************************************************************************************
+
+> Web Application Firewall (WAF):https://docs.microsoft.com/en-us/azure/aks/operator-best-practices-network
+
+> Azure CNI Network: So far, we've used the default Kubenet network, but the best practice guidance provides some of the shortcomings of Kubenet and guidance that                      production environments should use Azure CNI. The Application Gateway used this time is based on Azure CNI.
+ 
+ With Azure CNI, you can:
+* Assign IP to nodes and pods from Azure virtual network.
+* Everything is in the Azure virtual network, so it can be routed to other Azure and on-premises resources.
+
+> Virtual network size: With Azure CNI, all IP addresses are allocated from the virtual network, so you need a subnet that can provide a sufficient number of IPs.
+
+
+
+***********************************************************************************************************************************************************************
+
+                                                                Create a cluster using Azure CNI
+
+***********************************************************************************************************************************************************************
+A) Create a container registry
+
+Prerequisites:  
+             az -v
+             az aks install-cli
+             set PATH =%PATH%;C:\Users\saurav\.azure-kubectl
+             kubectl version
+
+Step1: Login:
+       az login
+
+Step2: Review and Select Subscription:
+       > List - az account list
+       > Choice - az account set -s <subscription id>
+       > Verification - az account show
+
+Step3: Creating a resource group:
+       az group create --name equinorproject --location eastus
+
+Step4: Creating a container registry (ACR):
+        az acr create --resource-group equinorproject --name equinoracr --sku basic
+
+Step5: Login to Container Registry (ACR):
+       az acr login -n equinoracr
+
+Step6: Get the login server name of the container registry (ACR):
+        az acr list --resource-group equinorproject --query "[]. {acrLoginServer: loginServer}" --output table
+
+Step7: Check the image pushed to the container registry (ACR):
+       az acr repository list --name equinoracr --output table
+
+
+Step1: a virtual network to build an AKS cluster. Change the size as needed:
+       az network vnet create -g equinorproject -n equinorprojectvnet --address-prefix 10.0.0.0/16 --subnet-name akssubnet --subnet-prefix 10.0.0.0/24
+
+Step2: Create a service principal:
+       az ad sp create-for-rbac --name equinorspn
+
+{
+  "appId": "9e72d0f5-77cd-45dd-a252-816c4f289398",
+  "displayName": "equinorspn",
+  "name": "http://equinorspn",
+  "password": "6149252e-3e60-4844-92dd-e5c2d95bd974",
+  "tenant": "214afa4d-d9b0-4cc4-9497-06abd7cbc5ea"
+}
+
+
+Step3: Get the resource name of the existing ACR:
+       az acr show --resource-group equinorproject --name equinoracr --query "id" --output tsv 
+
+/subscriptions/a2ca6b0c-2592-420a-be30-b1cbe1da7646/resourceGroups/equinorproject/providers/Microsoft.ContainerRegistry/registries/equinoracr
+
+Step4: Grant ACR pull authority to the created service principal:
+       az role assignment create --assignee <appId> --scope <acrId> --role acrpull
+
+az role assignment create --assignee 9e72d0f5-77cd-45dd-a252-816c4f289398 --scope /subscriptions/a2ca6b0c-2592-420a-be30-b1cbe1da7646/resourceGroups/equinorproject/providers/Microsoft.ContainerRegistry/registries/equinoracr --role acrpull
+
+
+Step5: Get the resource name of the virtual network subnet:
+       az network vnet subnet list -g equinorproject --vnet-name equinorprojectvnet --query "[0].id" --output tsv
+
+/subscriptions/a2ca6b0c-2592-420a-be30-b1cbe1da7646/resourceGroups/equinorproject/providers/Microsoft.Network/virtualNetworks/equinorprojectvnet/subnets/akssubnet
+
+
+Step6: Give the created service principal network contributor rights for the virtual network subnet:
+       az role assignment create --assignee <appId> --scope <subnet-id> --role "network contributor"
+
+az role assignment create --assignee 9e72d0f5-77cd-45dd-a252-816c4f289398 --scope /subscriptions/a2ca6b0c-2592-420a-be30-b1cbe1da7646/resourceGroups/equinorproject/providers/Microsoft.Network/virtualNetworks/equinorprojectvnet/subnets/akssubnet --role "network contributor"
+
+Step7: Creating a cluster:  Create a cluster with the az aks create command. appId and password use the values ??obtained when creating the service principal. Use Azure                              CNI and use a multi-node pool. For details on the various parameters, see the parameters for deployment:
+
+
+az aks create -g equinorproject \
+-n myaks -c 2 \
+--service-principal 9e72d0f5-77cd-45dd-a252-816c4f289398 \
+--client-secret 6149252e-3e60-4844-92dd-e5c2d95bd974 \
+--vm-set-type VirtualMachineScaleSets \
+--load-balancer-sku standard \
+--network-plugin azure \
+--vnet-subnet-id /subscriptions/a2ca6b0c-2592-420a-be30-b1cbe1da7646/resourceGroups/equinorproject/providers/Microsoft.Network/virtualNetworks/equinorprojectvnet/subnets/akssubnet \
+--docker-bridge-address 172.17.0.1/16 \
+--dns-service-ip 10.1.0.10 \
+--service-cidr 10.1.0.0/24 \
+--generate-ssh-keys
+
+
+
+
+Step8: After completing the creation, check the network settings from the portal.
+
+Step9: After completing the cluster construction in Azure CNI, add a new node pool as before:
+       az aks nodepool add -g equinorproject --cluster-name myaks --name nodepool2 -c 1 --node-vm-size Standard_DS1_v2
+
+Step10: Connect to AKS:
+        az aks get-credentials -g equinorproject -n myaks
+
+Step11: Get the node list. Check IP as well as name:
+        kubectl get nodes -o wide
+
+Step12:  Get the service and access with a browser. Check the operation:
+
+
+
+
+
+***********************************************************************************************************************************************************************
+
+                                                                  Application Gateway & AKS
+
+***********************************************************************************************************************************************************************
+
+There are currently two ways to connect Application Gateway and AKS, and the latest one is using Application Gateway Kubernetes Ingress . This time, we'll start with the old way to figure out what has changed, and then try the new way.
+
+Install Application Gateway:
+
+Step1: Create a subnet on the virtual network to install Application Gateway.
+       az network vnet subnet create -g equinorproject --vnet-name equinorprojectvnet --name appgatewaysubnet --address-prefixes 10.0.1.0/24
+
+Step2: Create a public IP:
+       az network public-ip create -g equinorproject -n equinorprojectagPublicIP --allocation-method Static --sku Standard
+
+Step3: Create an Application Gateway. It takes about 15-30 minutes:
+
+az network application-gateway create \
+-g equinorproject \
+-n equinorprojectag \
+--capacity 1 \
+--sku Standard_v2 \
+--vnet-name equinorprojectvnet \
+--subnet appgatewaysubnet \
+--public-ip-address equinorprojectagPublicIP\
+ --location eastus
+
+Step4: After completing the creation, check it on the Azure portal.
+
+
+
+
+***********************************************************************************************************************************************************************
+
+                                                        AKS configuration and Application Gateway configuration
+
+***********************************************************************************************************************************************************************
+
+AKS services can now be accessed directly from outside, so we will change them so that they can only be accessed from Application Gateway.
+
+Step1: Change the service definition at the end of deployment.yaml and configure the internal load balancer.
+       ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: core3webapp
+  labels:
+    app: core3webapp
+  annotations:
+    service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+spec:
+  type: "LoadBalancer"
+  ports:
+  - protocol: TCP
+    port: 80
+  selector:
+    app: core3webapp
+
+
+Step2: Deploy your changes.
+
+Step3: Check that EXTERNAL-IP is the virtual network address from the service.
+
+Step4: Open Application Gateway from the Azure portal and select the backend pool.
+
+Step5: Select the existing appGatewayBackendPool and set the value of EXTERNAL-IP to the target. Click “Save”.
+
+Step6: Check the public IP from the front-end IP configuration.
+
+Step7: Check the operation from the browser.
+
+
+
+
+
+

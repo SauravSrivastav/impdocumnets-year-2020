@@ -1,0 +1,54 @@
+***********************************************************************************************************************************************************************
+
+1. Deployment ALternatives for Azure:
+
+ 1.Azure Portal
+ 2.Azure RM Template
+ 3.Azure PowerShell
+ 4.Azure CLI
+ 5.Azure Management SDK/REST--(.net resources)
+ 6.Pulumi -- Similar to azure mangement API's. Can code in your own programming language(bring your own language)
+ 7.Terraform- Constrained to use HCL language.
+
+
+***********************************************************************************************************************************************************************
+
+2.Advantages of Terraform:
+
+ 1.Facilitates multi-cloud deloyments
+ 2.Integration with multiple cloud provider(e.g azure, aws, gcp)
+ 3.Integration with multiple config managers(e.g ansible, chef, puppet)
+ 4.Execute plans(dry run)
+ 5.Open Source
+
+
+***********************************************************************************************************************************************************************
+
+3. Terraform Disadvantages:
+
+ 1.HCL Langauge quirks.
+ 2.Slightly lagging support for latest & greatest cloud resources.
+
+
+***********************************************************************************************************************************************************************
+
+4.Installation and Configuration:
+ 
+ 1.Cross Platform.
+ 2.Install terraform.exe and Aure CLI.
+ 3.Azure Terraform VSCode Extension
+
+##################             Below are the steps to add terraform.exe location to the Enviornment Variables(Path)          #########################################
+
+
+Step1: https://www.terraform.io/downloads.html 
+
+Step2: Create Folder:Terraform in C drive : C:\Terraform\terraform_0.12.12_windows_amd64
+
+Step3: Open cmd prompt and execute: "terraform.exe"
+
+Step4: Goto Control Pannel->  Edit the System Enviornment Variables-> Enviornment Variables-> System Varaible add Terraform "C:\Terraform"
+
+
+
+
